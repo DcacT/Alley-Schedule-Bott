@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "alleybot",
+  "private_key_id": "3979e857c548d71422abdb46d6294b94ae78ecdf",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCr3HP5Qc/UAmfO\nA/grb6cpAMVkW15XNEtaE8cB6OM6AA6Ag5PkcxH50WiFP9bvY2CmDY8vtqvFxxtF\npnLBHLVU69wTI4DgYZ4YMABES9zTt2dURarwJDD1rYHSp1xPPAWK2FqyW2cix2QY\nakhVKnyqHMMdADgvf5m43qsdPtFKy/2iAxGrr+8CHzOPyZ5zxjDjIzC2Qawkuzr5\npqqMAKgOQy7ih6YzdF2TRmkcpgB0dvTto2MoeLktD2z8Oy86eHoi3RIErXPy90uf\n18e2ERjzIrkFYjNZ8ogOijfeDlMqqzX+lsl31NOGphJwCqv1pLai2GmHkqHo92SK\nExYqA3jnAgMBAAECggEAC+8TfeKkMrB2EoKzuBnD4vTYQCHuGPfF0bv015JF5mWm\n8XqcNEK0pAMhaGX99VfnwrAcr29WWeCmaVLnvgwnH/3+0AoTmBZ/Oru+kP+EQTlc\n61JTzo1yJDqHp3U9U40zRKhwZ9kxU2NtdRqQP5sN1rwyOkXPy6XnKpoKX3iuDNek\nZ9x0Ct0DZ0QN/P0o3PyyUxKVafFbnuiHIjuDnZEX0TyXwnXNFtc9m0vnLz7jYBZ4\nVxPktqT/u+a9jP6C+VGkkqfwpBO8xblReyMhmZFjw8egnN74426TO66yPV30oHSa\n/DDrURnzRRm58gACBH2dNsZlN7IUOIFqj0OpPncHhQKBgQDuLfn2Q3grpLN9Ocgd\n7PTX/oACsP61ukF0S7xzLMHiTP9WsXiiKVqVtna7roGaAzsW3pzNJ/SdtNX1rI7j\nuMxGpvCiPiJ64Mv0tStxE/ZJAJv3jhMjjKezJkxuOT+SXLhPBhAEX4nCxadkEPo6\nJ5oBbo4CW7TQj9aOIaYpbtQp7QKBgQC4uDtnLnFCBce/ULgXG9udXdTLyou7cB7s\np48wI5E8tmArFmQf27Ea+/mf9WPdsQsXIm3tBiEi32A/AdCUiHQ5xISV4H3uPChK\nUYRUMZk0VNqlH7B3/Rm0KZ8Gr0AaqjvM9wzsrWpZfwAaiLHE31xIVPyKD+a15Eg9\nSQh0pEsDowKBgFN9gFqn6e76jASAhbqfvnAcgUjwPEj9okYe6k9BSDGIphUAnvXR\nIzTJwjMmB74yFbt9i1+K+v9xTXMR6wC+XbUCfeWRfEqwlC4Sd8jqo3GRqhqMDf9v\nJbXx3ebhYHxwzha9XE38I3FIEdZM8ToDecO4ukTvWqGlWiN2fiWV+P89AoGAFyyV\n10YOU3giLTBVSCDoln+VGNQaX7ObTZlf72wm5nUC76Tpfs2zFG2UTasdkkyJ1acu\nH1Rrh9J6Yq05m8jau/yZnawCYIcPjvNXJLDsRZJ3s8ub+hG4zc+C8fW+lxnQUtCT\nwIWpF/1E6A9KLibPjwuKe0+vZBZ1saqd8vRBrP0CgYADB8U3h9G2KWk7Urw8vU00\njGbX66UdQQ5pALKtj7pnLBzfFfUchsAk5pxC/cqtO5sxmdoUbYQGclO1WKBpPc3o\nDxSamnqxJ8icbNSocdnJ3kifzmB2zLRu0VqlihufzlzD7kerGpceeCjcJia73LK6\n++nbqV88XVHHI+5Ev/nEKw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "deeriocapuff@alleybot.iam.gserviceaccount.com",
+  "client_id": "110931938193675219226",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/deeriocapuff%40alleybot.iam.gserviceaccount.com"
+}
