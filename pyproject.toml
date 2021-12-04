@@ -10,6 +10,7 @@ python-dotenv = "^0.19.2"
 discord = "^1.7.3"
 google-api-python-client = "^2.31.0"
 google-auth-oauthlib = "^0.4.6"
+Flask = "^2.0.2"
 
 [tool.poetry.dev-dependencies]
 

@@ -8,6 +8,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 import asyncio
+from keep_alive import keep_alive
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
@@ -414,7 +415,7 @@ class MyClient(discord.Client):
                 if self.guild.name == GUILD:
                     break
         for channel in self.guild.text_channels:
-            if str(channel)=='bot-command':
+            if str(channel)=='bot-commands':
                 self.cmdChannel = channel
             if str(channel) == 'calendar-links':
                 self.cldChannel = channel
@@ -425,16 +426,16 @@ class MyClient(discord.Client):
               f'{guild.name}(id: {guild.id})')
 
         self.updateWorkerList()
-        self.loadCalendarAPI()
-        self.loadDriveAPI()
-        self.loadSheetsAPI()
+        self.updateAPI()
         print('Ready to go')
 
 
     async def on_message(self, message):
         if message.author.id == self.user.id:
             return
-            
+        
+        self.updateAPI()    
+
         if message.content.startswith('!hello'):
             await message.reply('Hello!', mention_author=True)
 
@@ -452,13 +453,15 @@ class MyClient(discord.Client):
             
             a = []
             for x in range(10):
+                await asyncio.sleep(0.5)
                 a.append( await message.channel.send(Finger[x])) 
             for x in range(10):
-                await a[9-x].delete()
+              await asyncio.sleep(0.5)
+              await a[9-x].delete()
             
-
+        
         if message.content.startswith("!"):
-            if message.channel != self.cmdChannel:
+            if message.channel == self.cmdChannel:
                 
                 if message.content.startswith('!checkWorkerList'):
                     await message.channel.send("Week 1:")
@@ -496,18 +499,9 @@ class MyClient(discord.Client):
                             await self.cldChannel.send(title )
                     await Temp1.edit(content = "done!")
                 
-                if message.content.startswith('!checkCalendarList'):
-                  calendar_list = self.loadCalendarAPI().calendarList().list().execute()
-                  calendarsList = calendar_list['items']
-                  for calendar in calendarsList:
-                    if calendar['summary'].startswith('Alley'):
-                      print(calendar['summary'])
-                      await message.channel.send(calendar['summary']) 
-
-                
             else:
                 Temp1 = await message.channel.send("please Send commands in the proper channel")
-                timer = 10
+                timer = 5
                 Temp3 = await message.channel.send("I make alot of mess")
                 Temp2 = await message.channel.send("message deleted in -"+str (timer))
                 while timer!=0:
@@ -520,6 +514,12 @@ class MyClient(discord.Client):
 
             
 #OTHER###########################
+    def updateAPI(self):
+      self.loadCalendarAPI()
+      self.loadSheetsAPI()
+      self.loadDriveAPI()
+      print("API updated")
+
 
     def getIDfromURL(self, URL=str):  #done    #only works for spreadsheet urls
         start = URL.find('/d/')
@@ -533,4 +533,5 @@ class MyClient(discord.Client):
         return URL
 
 client = MyClient()
+keep_alive()
 client.run(TOKEN)
