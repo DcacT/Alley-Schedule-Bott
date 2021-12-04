@@ -9,6 +9,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 import asyncio
 from keep_alive import keep_alive
+import time
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
@@ -65,7 +66,6 @@ class MyClient(discord.Client):
 
     #updated
     def sheetCopyPaste(self, Input=str):  #NEED LOAD CALENDAR
-
       body = {
 
           'destination_spreadsheet_id': self.OutputSheetID
@@ -75,7 +75,7 @@ class MyClient(discord.Client):
       sheet = spreadsheet.get('sheets', '')
       ID = sheet[0].get("properties", {}).get("sheetId")
       self.loadSheetsAPI().spreadsheets().sheets().copyTo(spreadsheetId=Input,sheetId=ID, body=body).execute()
-
+      print("new sheet added")
       spreadsheet = self.loadSheetsAPI().spreadsheets().get(spreadsheetId= self.OutputSheetID).execute()
       sheet = spreadsheet.get('sheets', '')
       for sheets in sheet: 
@@ -91,6 +91,7 @@ class MyClient(discord.Client):
               }
               }
               self.loadSheetsAPI().spreadsheets().batchUpdate(spreadsheetId = self.OutputSheetID, body = body).execute()
+              print("old sheet deleted")
 
       spreadsheet = self.loadSheetsAPI().spreadsheets().get(spreadsheetId= self.OutputSheetID).execute()
       sheet = spreadsheet.get('sheets', '')
@@ -110,8 +111,7 @@ class MyClient(discord.Client):
                   }
               }
               self.loadSheetsAPI().spreadsheets().batchUpdate(spreadsheetId = self.OutputSheetID, body = body).execute()
-
-
+              print("new sheet renamed")
       self.updateWorkerList()
       print('sheetCopyPaste executed')
 
@@ -172,7 +172,7 @@ class MyClient(discord.Client):
                 self.WorkerList[0].append(x[0])
             if y == ['Employee Name'] and roll1 == 0:
                 roll1 = 1
-
+        print("Worker List Updated")
     #updated
 
 #CALENDAR#############################################################################
@@ -206,6 +206,7 @@ class MyClient(discord.Client):
         self.createCalendar()
 
     def createCalendar(self):
+        self.updateWorkerList()
         for z in range(2):
             calendar_list = self.loadCalendarAPI().calendarList().list(
             ).execute()
@@ -264,7 +265,7 @@ class MyClient(discord.Client):
         print('deleteCalendars executed')
 
     def updateEvents(self, worker=str, calendarID=str, t=int):
-        #await asyncio.sleep(1)
+        time.sleep(1)
         startDate = self.sheetGetDate(self.OutputSheetID)  #convert date
         y = startDate.split('-')
         datetime_object = datetime.datetime.strptime(y[1], "%b")
@@ -361,7 +362,7 @@ class MyClient(discord.Client):
                     if calendar['summary'] == self.workerCalendarTitle(worker):
                         self.updateEvents(worker, calendar['id'], z)
                         break
-                print("updated calendar at week " + str(z))
+                #print("updated calendar at week " + str(z))
             print("head to next week")
         print('eventUpdates executed')
 
@@ -463,7 +464,7 @@ class MyClient(discord.Client):
         if message.content.startswith("!"):
             if message.channel == self.cmdChannel:
                 
-                if message.content.startswith('!checkWorkerList'):
+                if message.content.startswith('!getWorkerList'):
                     await message.channel.send("Week 1:")
                     await message.channel.send(self.WorkerList[0])   
                     await message.channel.send("Week 2:")
@@ -490,12 +491,15 @@ class MyClient(discord.Client):
                     await self.cldChannel.purge(limit = 100)
                     date = self.sheetGetDate(self.OutputSheetID)
                     Temp1 = await message.channel.send('Processing')
+                    date = self.sheetGetDate(self.OutputSheetID)
+                    await self.cldChannel.send('Schedule updated!')
+                    await self.cldChannel.send('Current schedule starts ' + date)
                     await self.cldChannel.send('Most Recent Schedule: ')
                     calendar_list = self.loadCalendarAPI().calendarList().list().execute()
                     calendarsList = calendar_list['items']
                     for calendar in calendarsList:
                         if calendar['summary'].startswith('Alley'):
-                            title = calendar['summary'] +'\n' +self.getURLfromCalendarID(calendar['id']) + '@group.calendar.google.com'
+                            title = calendar['summary'] +'\n' +self.getURLfromCalendarID(calendar['id'])
                             await self.cldChannel.send(title )
                     await Temp1.edit(content = "done!")
                 
@@ -531,6 +535,7 @@ class MyClient(discord.Client):
     def getURLfromCalendarID(self, ID=str):
         URL = 'https://calendar.google.com/calendar/u/0?cid=' + ID
         return URL
+
 
 client = MyClient()
 keep_alive()
