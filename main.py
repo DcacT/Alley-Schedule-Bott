@@ -8,6 +8,7 @@ from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+import asyncio
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
@@ -37,6 +38,10 @@ class MyClient(discord.Client):
 
     ListofYes = ['x', 'x0.5', 'OC', 'T']
     pos = [0, 0]
+
+    guild = 0
+    cmdChannel = 0
+    cldChannel = 0
 
     #SHEETS ############################################################################################
     #The sheets apis are accessed through credentials account, unlike the drive and calendar apis, which are through OAuth clients
@@ -133,6 +138,7 @@ class MyClient(discord.Client):
                 CALENDARTOKEN, CALENDARSCOPES)
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
+                print("Refreshed Calendar API")
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
@@ -196,7 +202,6 @@ class MyClient(discord.Client):
                 if calendar['summary'] != 'puffsuperiority@gmail.com':
                     now = datetime.datetime.utcnow().isoformat(
                     ) + 'Z'  # 'Z' indicates UTC time
-                    print('Getting the upcoming 10 events')
                     events_result = self.loadCalendarAPI().events().list(
                         calendarId=calendar['id'],
                         timeMin=now,
@@ -213,7 +218,7 @@ class MyClient(discord.Client):
         print('deleteCalendars executed')
 
     def updateEvents(self, worker=str, calendarID=str, t=int):
-
+        await asyncio.sleep(1)
         startDate = self.sheetGetDate(self.OutputSheetID)  #convert date
         y = startDate.split('-')
         datetime_object = datetime.datetime.strptime(y[1], "%b")
@@ -222,8 +227,8 @@ class MyClient(discord.Client):
                              day=int(y[0]))
         data = self.getPersonalSchedule(worker, t)
 
-        print(len(data))
-        print(data)
+        #print(len(data))
+        #print(data)
         description = ''
         for x in data:
             if x.startswith(worker):
@@ -324,7 +329,7 @@ class MyClient(discord.Client):
         if not creds or not creds.valid:
 
             if creds and creds.expired and creds.refresh_token:
-                #print('y')
+                print("Refreshed Drive API")
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
@@ -359,71 +364,117 @@ class MyClient(discord.Client):
         for guild in self.guilds:
             if guild.name == GUILD:
                 break
+
+        for self.guild in self.guilds:
+                if self.guild.name == GUILD:
+                    break
+        for channel in self.guild.text_channels:
+            if str(channel)=='bot-command':
+                self.cmdChannel = channel
+            if str(channel) == 'calendar-links':
+                self.cldChannel = channel
+
+
         print(f'{self.user} has connected to Discord!')
         print(f'{self.user} is connected to the following guild:\n'
               f'{guild.name}(id: {guild.id})')
+
         self.updateWorkerList()
         self.loadCalendarAPI()
         self.loadDriveAPI()
         self.loadSheetsAPI()
         print('Ready to go')
 
-    async def on_message(self, message):
 
+    async def on_message(self, message):
         if message.author.id == self.user.id:
             return
-
+            
         if message.content.startswith('!hello'):
             await message.reply('Hello!', mention_author=True)
 
-        if message.content.startswith('!checkWorkerList'):
-            await message.channel.send("Week 1:")
-            await message.channel.send(self.WorkerList[0])
-            await message.channel.send("Week 2:")
-            await message.channel.send(self.WorkerList[1])
+        if 'fuck' in message.content:             
+            Finger = ["....................../´¯/)" 
+            ,"....................,/¯../ "
+            ,".................../..../ "
+            ,"............./´¯/'...'/´¯¯`·¸ "
+            ,"........../'/.../..../......./¨¯\ "
+            ,"........('(...´...´.... ¯~/'...') "
+            ,".........\.................'...../ "
+            ,"..........''...\.......... _.·´ "
+            ,"............\..............( "
+            ,"..............\.............\..."]
+            
+            a = []
+            for x in range(10):
+                a.append( await message.channel.send(Finger[x])) 
+            for x in range(10):
+                await a[9-x].delete()
+            
 
-        if message.content.startswith('!updateCalendar'):
-            self.updateAllEvents()
+        if message.content.startswith("!"):
+            if message.channel != self.cmdChannel:
+                
+                if message.content.startswith('!checkWorkerList'):
+                    await message.channel.send("Week 1:")
+                    await message.channel.send(self.WorkerList[0])   
+                    await message.channel.send("Week 2:")
+                    await message.channel.send(self.WorkerList[1])
 
-        if message.content.startswith('!check'):
-            for i in range(2):
-                for worker in self.WorkerList[i]:
-                    print(self.getPersonalSchedule(worker, i))
+                if message.content.startswith('!uploadSchedule'):
+                    if message.content != '!uploadSchedule':
+                        ID= self.getIDfromURL(message.content)  # getID
+                        if ID : 
+                            NewMessage = await message.channel.send("processing. . . ")
+                            self.fileSavetoDrive(ID)                  #save to drive
+                            self.updateWorkerList()
+                            self.updateCalendarList()
+                            await NewMessage.edit(content ="still processing. . . sorry. . .")
+                            self.updateAllEvents()
+                            await NewMessage.edit(content ="Done!")
+                            date = self.sheetGetDate(self.OutputSheetID)
+                            await message.channel.send('Schedule updated!')
+                            await message.channel.send('Current schedule starts ' + date)
+                        else: await message.channel.send('URL INVALID')
+                    else :
+                        await message.channel.send('Schedule?')    
+                if message.content.startswith('!getSchedule'):
+                    await self.cldChannel.purge(limit = 100)
+                    date = self.sheetGetDate(self.OutputSheetID)
+                    Temp1 = await message.channel.send('Processing')
+                    await self.cldChannel.send('Most Recent Schedule: ')
+                    calendar_list = self.loadCalendarAPI().calendarList().list().execute()
+                    calendarsList = calendar_list['items']
+                    for calendar in calendarsList:
+                        if calendar['summary'].startswith('Alley'):
+                            title = calendar['summary'] +'\n' +self.getURLfromCalendarID(calendar['id']) + '@group.calendar.google.com'
+                            await self.cldChannel.send(title )
+                    await Temp1.edit(content = "done!")
+                  
+                
+                if message.content.startsWith('!checkCalendarList'):
+                  calendar_list = self.loadCalendarAPI().calendarList().list().execute()
+                  calendarsList = calendar_list['items']
+                  for calendar in calendarsList:
+                    if calendar['summary'].startswith('Alley'):
+                      print(calendar['summary'])
+                      await message.channel.send(calendar['summary']) 
 
-        if message.content.startswith('!uploadSchedule'):
-            if message.content != '!uploadSchedule':
-                NewMessage = await message.channel.send("processing. . . ")
-                ID = self.getIDfromURL(message.content)  # getID
-                self.fileSavetoDrive(ID)  #save to drive
-                self.updateWorkerList()
-                self.updateCalendarList()
-                await NewMessage.edit(
-                    content="still processing. . . sorry. . .")
-                self.updateAllEvents()
-                await NewMessage.edit(content="Done!")
-                date = self.sheetGetDate(self.OutputSheetID)
-                await message.channel.send('Schedule updated!')
-                await message.channel.send('currentschedule starts ' + date)
+                
             else:
-                await message.channel.send('Schedule?')
+                Temp1 = await message.channel.send("please Send commands in the proper channel")
+                timer = 10
+                Temp3 = await message.channel.send("I make alot of mess")
+                Temp2 = await message.channel.send("message deleted in -"+str (timer))
+                while timer!=0:
+                    await asyncio.sleep(1)
+                    timer -=1
+                    await Temp2.edit(content = "message deleted in -"+str (timer))
+                await Temp1.delete()
+                await Temp3.delete()
+                await Temp2.delete()
 
-        if message.content.startswith('!getSchedule'):
-            date = self.sheetGetDate(self.OutputSheetID)
-            await message.channel.send('Most Recent Schedule: ')
-            calendar_list = self.loadCalendarAPI().calendarList().list(
-            ).execute()
-            calendarsList = calendar_list['items']
-            for calendar in calendarsList:
-                if calendar['summary'].startswith('Alley'):
-                    title = calendar[
-                        'summary'] + '\n' + self.getURLfromCalendarID(
-                            calendar['id'])
-                    await message.channel.send(title)
-
-        if message.content.startswith('!status'):
-            await message.channel.send('still alive, I guess')
-
-
+            
 #OTHER###########################
 
     def getIDfromURL(self, URL=str):  #done    #only works for spreadsheet urls
