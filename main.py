@@ -534,4 +534,5 @@ class MyClient(discord.Client):
 
 client = MyClient()
 keep_alive()
+print('ok')
 client.run(TOKEN)
