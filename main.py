@@ -4,7 +4,6 @@ import discord
 import datetime
 from datetime import date, timedelta
 from googleapiclient.discovery import build
-from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -13,16 +12,15 @@ import asyncio
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 SHEETSCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-
 DRIVESCOPES = ['https://www.googleapis.com/auth/drive']
 CALENDARSCOPES = ['https://www.googleapis.com/auth/calendar']
 OAUTHSCOPES = DRIVESCOPES + CALENDARSCOPES
 
 KEY = 'DeeriocaPuff.json'  #Credentials
-OKEY = 'NewKey.json'  #OUATH ACC
+OKEY = 'OAuthKey.json'  #OUATH ACC
 DRIVETOKEN = 'DRIVETOKEN.json'
 CALENDARTOKEN = 'CALENDARTOKEN.json'
-
+SHEETTOKEN = 'SHEETTOKEN.json'
 
 class MyClient(discord.Client):
     SampleSheetID = '1stNO-oaMm6ytYjnAv3Do4hyZsd04wxAHnTwTppdX_sk'
@@ -46,28 +44,75 @@ class MyClient(discord.Client):
     #SHEETS ############################################################################################
     #The sheets apis are accessed through credentials account, unlike the drive and calendar apis, which are through OAuth clients
     def loadSheetsAPI(self):  #DONE
-        creds1 = service_account.Credentials.from_service_account_file(
-            KEY, scopes=SHEETSCOPES)
-        sheetsAPI = build('sheets', 'v4', credentials=creds1)
+        creds = 0
+        if os.path.exists(SHEETTOKEN):
+            creds = Credentials.from_authorized_user_file(SHEETTOKEN, SHEETSCOPES)
+            # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                print("Refreshed Sheet API")
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    OKEY, SHEETSCOPES)
+                creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open(SHEETTOKEN, 'w') as token:
+                token.write(creds.to_json())
+        sheetsAPI = build('sheets', 'v4', credentials=creds)
         return sheetsAPI
 
     #updated
-    def sheetCopyPaste(self, InputSheet=str):  #NEED LOAD CALENDAR
+    def sheetCopyPaste(self, Input=str):  #NEED LOAD CALENDAR
 
-        sheet = self.loadSheetsAPI().spreadsheets()
-        result = sheet.values().get(spreadsheetId=InputSheet,
-                                    range=self.SampleSheetRange).execute()
-        values = result.get('values', [])
+      body = {
 
-        body = {'values': values}
+          'destination_spreadsheet_id': self.OutputSheetID
+      }
 
-        result = self.loadSheetsAPI().spreadsheets().values().update(
-            spreadsheetId=self.OutputSheetID,
-            range=self.OutputSheetRange,
-            valueInputOption="USER_ENTERED",
-            body=body).execute()
-        self.updateWorkerList()
-        print('execute sheetCopyPaste')
+      spreadsheet = self.loadSheetsAPI().spreadsheets().get(spreadsheetId= Input).execute()
+      sheet = spreadsheet.get('sheets', '')
+      ID = sheet[0].get("properties", {}).get("sheetId")
+      self.loadSheetsAPI().spreadsheets().sheets().copyTo(spreadsheetId=Input,sheetId=ID, body=body).execute()
+
+      spreadsheet = self.loadSheetsAPI().spreadsheets().get(spreadsheetId= self.OutputSheetID).execute()
+      sheet = spreadsheet.get('sheets', '')
+      for sheets in sheet: 
+          titles = sheets.get("properties", {}).get("title")
+          ID = sheets.get("properties", {}).get("sheetId")
+          if titles == "Sheet1":
+
+              body = {
+              'requests': {
+                  "deleteSheet": {
+                      "sheetId": ID
+                  }
+              }
+              }
+              self.loadSheetsAPI().spreadsheets().batchUpdate(spreadsheetId = self.OutputSheetID, body = body).execute()
+
+      spreadsheet = self.loadSheetsAPI().spreadsheets().get(spreadsheetId= self.OutputSheetID).execute()
+      sheet = spreadsheet.get('sheets', '')
+      for sheets in sheet: 
+          titles = sheets.get("properties", {}).get("title")
+          ID = sheets.get("properties", {}).get("sheetId")
+          if titles == "Copy of Employee Schedule":
+              body = {
+              'requests': {
+                  "updateSheetProperties": {
+                      "properties": {
+                          "sheetId": ID,
+                          "title": 'Sheet1',
+                      },
+                      "fields": "title",
+                      }
+                  }
+              }
+              self.loadSheetsAPI().spreadsheets().batchUpdate(spreadsheetId = self.OutputSheetID, body = body).execute()
+
+
+      self.updateWorkerList()
+      print('sheetCopyPaste executed')
 
     #updated
     def sheetGetDate(self, sheetID):  #DONE
@@ -179,7 +224,7 @@ class MyClient(discord.Client):
                     created_calendar = self.loadCalendarAPI().calendars(
                     ).insert(body=created_calendar_data).execute()
                     rule = {"role": "reader", "scope": {"type": "default"}}
-                    created_rule = self.loadCalendarAPI().acl().insert(
+                    self.loadCalendarAPI().acl().insert(
                         calendarId=created_calendar['id'],
                         body=rule).execute()
                     print('Created: ' + created_calendar['summary'])
@@ -218,7 +263,7 @@ class MyClient(discord.Client):
         print('deleteCalendars executed')
 
     def updateEvents(self, worker=str, calendarID=str, t=int):
-        await asyncio.sleep(1)
+        #await asyncio.sleep(1)
         startDate = self.sheetGetDate(self.OutputSheetID)  #convert date
         y = startDate.split('-')
         datetime_object = datetime.datetime.strptime(y[1], "%b")
@@ -450,9 +495,8 @@ class MyClient(discord.Client):
                             title = calendar['summary'] +'\n' +self.getURLfromCalendarID(calendar['id']) + '@group.calendar.google.com'
                             await self.cldChannel.send(title )
                     await Temp1.edit(content = "done!")
-                  
                 
-                if message.content.startsWith('!checkCalendarList'):
+                if message.content.startswith('!checkCalendarList'):
                   calendar_list = self.loadCalendarAPI().calendarList().list().execute()
                   calendarsList = calendar_list['items']
                   for calendar in calendarsList:
